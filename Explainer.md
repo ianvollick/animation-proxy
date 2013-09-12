@@ -41,7 +41,7 @@ This explainer was kept intentionally high level. Our hope is to convince you of
 ...well, maybe it wouldn't hurt to give a few examples.
 
 ### parallax
-```
+```JavaScript
 // On the main thread.
 overflow_scroll_proxy = overflow_scroll_element.getAnimationProxy();
 parallax_scroll_proxy = parallax_scroll_element.getAnimationProxy();
@@ -73,7 +73,7 @@ function do_parallax(offset) {
 ```
 
 ### position: sticky
-```
+```JavaScript
 // This is just the meat of the web worker side.
 function raf_callback(timestamp) {
   overflow_scroll_proxy.getScrollOffset().then(do_sticky, error);
