@@ -40,8 +40,41 @@ This explainer was kept intentionally high level. Our hope is to convince you of
 
 ...well, maybe it wouldn't hurt to give a few examples.
 
+### parallax
+```
+// On the main thread.
+overflow_scroll_proxy = overflow_scroll_element.getAnimationProxy();
+parallax_scroll_proxy = parallax_scroll_element.getAnimationProxy();
+
+worker.postMessage({
+  'scale': 0.9,
+  'overflow_proxy': overflow_scroll_proxy,
+  'parallax_proxy': parallax_scroll_proxy,
+});
+
+// On the web worker
+function on_message(msg) {
+  parallax_scroll_scale = msg.scale;
+  overflow_scroll_proxy = msg.overflow_proxy;
+  parallax_scroll_proxy = msg.parallax_proxy;
+  self.requestAnimationFrame(raf_callback);
+}
+
+function raf_callback(timestamp) {
+  overflow_scroll_proxy.getScrollOffset().then(do_parallax, error);
+}
+
+function do_parallax(offset) {
+  offset.scale(parallax_scroll_scale);
+  parallax_scroll_proxy.setScrollOffset(offset)
+    .then(function(result) { self.requestAnimationFrame(raf_callback); },
+          error);
+}
+```
+
 ### position: sticky
 ```
+// This is just the meat of the web worker side.
 function raf_callback(timestamp) {
   overflow_scroll_proxy.getScrollOffset().then(do_sticky, error);
 }
@@ -51,20 +84,6 @@ function do_sticky(offset) {
   var transform = new CSSMatrix();
   transform.Translate(0, compensation);
   sticky_element_proxy.setTransform(transform)
-    .then(function(result) { self.requestAnimationFrame(raf_callback); },
-          error);
-}
-```
-
-### parallax
-```
-function raf_callback(timestamp) {
-  overflow_scroll_proxy.getScrollOffset().then(do_parallax, error);
-}
-
-function do_parallax(offset) {
-  offset.scale(parallax_scroll_scale);
-  parallax_scroll_proxy.setScrollOffset(offset)
     .then(function(result) { self.requestAnimationFrame(raf_callback); },
           error);
 }
