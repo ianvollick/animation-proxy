@@ -52,7 +52,7 @@ worker.postMessage({
   'parallax_proxy': parallax_scroll_proxy,
 });
 
-// On the web worker
+// On the web worker.
 function on_message(msg) {
   parallax_scroll_scale = msg.scale;
   overflow_scroll_proxy = msg.overflow_proxy;
