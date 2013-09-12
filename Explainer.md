@@ -1,4 +1,4 @@
-JavaScript-driven accelerated animations
+JavaScript-Driven Accelerated Animations
 ===============
 {vollick, jbroman, ajuma, rjkroege}@chromium.org
 
