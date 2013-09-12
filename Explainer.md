@@ -40,4 +40,32 @@ This explainer was kept intentionally high level. Our hope is to convince you of
 
 ...well, maybe it wouldn't hurt to give a few examples.
 
-TODO(vollick) add examples here.
+### position: sticky
+```
+function raf_callback(timestamp) {
+  overflow_scroll_proxy.getScrollOffset().then(do_sticky, error);
+}
+
+function do_sticky(offset) {
+  var compensation = min_offset - Math.min(Math.max(offset.y, min_offset), max_offset);
+  var transform = new CSSMatrix();
+  transform.Translate(0, compensation);
+  sticky_element_proxy.setTransform(transform)
+    .then(function(result) { self.requestAnimationFrame(raf_callback); },
+          error);
+}
+```
+
+### parallax
+```
+function raf_callback(timestamp) {
+  overflow_scroll_proxy.getScrollOffset().then(do_parallax, error);
+}
+
+function do_parallax(offset) {
+  offset.scale(parallax_scroll_scale);
+  parallax_scroll_proxy.setScrollOffset(offset)
+    .then(function(result) { self.requestAnimationFrame(raf_callback); },
+          error);
+}
+```
