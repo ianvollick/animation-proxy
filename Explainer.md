@@ -20,7 +20,7 @@ A Tiny, But Surprisingly Expressive Kernel
 ------------------------------------------
 What does this proxy buy us? Well, a number of proposals that have been drafted to address some of the use cases mentioned in the problem statement could largely be implemented as polyfills on top of this kernel. So, too, could some existing web APIs. Specifically,
 
- - [Web Animations](http://dev.w3.org/fxtf/web-animations/)
+ - Some bits of [Web Animations](http://dev.w3.org/fxtf/web-animations/)
  - [Touch-based Animation Scrubbing](https://docs.google.com/document/d/1vRUo_g1il-evZs975eNzGPOuJS7H5UBxs-iZmXHux48/edit)
  - [position:sticky](http://updates.html5rocks.com/2012/08/Stick-your-landings-position-sticky-lands-in-WebKit)
  - [Smooth Scrolling](http://dev.w3.org/csswg/cssom-view/), Sections 4, 5, 7, 12, and 13.
