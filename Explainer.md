@@ -4,13 +4,13 @@ JavaScript-Driven Accelerated Animations
 
 Problem
 -------
-JavaScript-driven animations are extremely flexible and powerful, but are subject to main thread jank. And although JavaScript can run on a web worker, DOM access and css property animations are not permitted. Despite their susceptibility to main thread jank, main thread animations are widely used; they're the only way to create common effects such as parallax, position-sticky, image carousels, custom scroll animations, iphone-style contact lists, and physics-based animations. In a perfect world, the main thread would always be responsive enough that the JavaScript animation callback would get a chance to run every frame. In reality this is extremely hard to achieve (both for user agents and developers of large sites composed of disparate components). The result is lots of janky pages.
+JavaScript-driven animations are extremely flexible and powerful, but are subject to main thread jank (by jank, I mean unpredictable interruptions in the rate that animations are serviced on a thread due to other, unrelated work on that thread). And although JavaScript can run on a web worker, DOM access and CSS property animations are not permitted. Despite their susceptibility to main thread jank, main thread animations are widely used; they're the only way to create common effects such as parallax, position-sticky, image carousels, custom scroll animations, iphone-style contact lists, and physics-based animations. In a perfect world, the main thread would always be responsive enough to guarantee that a JavaScript animation callback would be serviced every frame. In reality, this is extremely hard to achieve, both for user agents and developers of large sites composed of disparate components. The result is lots of janky pages.
 
-Why can't we update css properties from a worker thread? Updating css properties _could_ effect a style recalc or a layout, and those operations must happen on the main thread. That said, there are certain 'layout-free' properties that can be modified without these side effects. These properties include transform, opacity and scroll offset. Clearly identifying these layout-free properties, and allowing them to run from any thread, would provide a simple and powerful way to acheive smooth animations.
+Why can't we update CSS properties from a worker thread? Updating CSS properties _could_ effect a style recalc or a layout and those operations must happen on the main thread. That said, there are certain 'layout-free' properties that can be modified without these side effects. These properties include transform, opacity and scroll offset. Clearly identifying these layout-free properties, and allowing them to run from any thread, would provide a simple and powerful way to acheive smooth animations.
 
 Goal
 ----
-To allow authors to create accelerated animations of css properties via JavaScript. At first we will restrict ourselves to accelerating animations of transform, opacity and scroll offset since virtually all UAs already support accelerated animation of these properties, either by accelerated css animations or threaded scrolling.
+To allow authors to create accelerated animations of CSS properties via JavaScript. At first we will restrict ourselves to accelerating animations of transform, opacity and scroll offset since virtually all UAs already support accelerated animation of these properties, either by accelerated CSS animations or threaded scrolling.
 
 High Level Proposal
 -------------------
@@ -18,7 +18,7 @@ Allow the creation of a proxy to layout-free properties. This proxy could then b
 
 A Tiny, But Surprisingly Expressive Kernel
 ------------------------------------------
-What does this proxy buy us? Well, a number of proposals that have been drafted to address some of the use cases mentioned in the problem statement could largely be implemented as polyfills on top of this kernel. So, too, could some existing web APIs. Specifically,
+What does this proxy buy us? A number of proposals that have been drafted to address some of the use cases mentioned in the problem statement could largely be implemented as polyfills on top of this kernel. So, too, could some existing web APIs. Specifically,
 
  - Some bits of [Web Animations](http://dev.w3.org/fxtf/web-animations/)
  - [Touch-based Animation Scrubbing](https://docs.google.com/document/d/1vRUo_g1il-evZs975eNzGPOuJS7H5UBxs-iZmXHux48/edit)
@@ -26,13 +26,13 @@ What does this proxy buy us? Well, a number of proposals that have been drafted 
  - [Smooth Scrolling](http://dev.w3.org/csswg/cssom-view/), Sections 4, 5, 7, 12, and 13.
  - Accelerated CSS animations. ([I/O talk](http://www.youtube.com/watch?v=hAzhayTnhEI))
 
-It’s clear from the number of attempts at solving the smooth animation problem that this is extremely important for the web, and it would be wonderful if this problem could be addressed with a small, easy-to-implement kernel. It would also let creative web developers create new animation authoring libraries that are just as performant as their native counterparts. In addition to its simplicity, another benefit of this approach is that it ‘explains the web’ in the [Extensible Web Manifesto](extensiblewebmanifesto.org) sense. In particular, it explains accelerated animations. This brings us to...
+It’s clear from the number of attempts at solving the smooth animation problem that this is extremely important for the web, and it would be wonderful if this problem could be addressed with a small, easy-to-implement kernel. It would also let creative web developers devise new animation authoring libraries that are just as performant as their native counterparts. In addition to its simplicity, another benefit of this approach is that it ‘explains the web’ in the [Extensible Web Manifesto](extensiblewebmanifesto.org) sense. In particular, it explains accelerated animations. This brings us to...
 
 The Big Concern
 ---------------
 We want to explain the web, not the particular implementation details of a particular browser at a particular point in its history. Are we marrying ourselves to implementation details here?
 
-No! Virtually all user agents support, via css, accelerated opacity and transform animations. And they’re going to have to support them for the foreseeable future. By whatever means these browsers are able to guarantee that things can slide around and fade in and out efficiently for css animations, they will be able to permit these effects to be driven by JavaScript. It doesn’t, for example, tie us to the idea of a composited layer or a layer tree, concepts that may not even exist in all browser implementations. The animated DOM elements might, say, be redrawn by the GPU each frame. But this doesn’t matter. These implementation details are orthogonal to the animation proxy concept.
+I think the answer is no. Virtually all user agents support, via CSS, accelerated opacity and transform animations, and they’re going to have to support them for the foreseeable future. By whatever means browsers are able to guarantee that things can slide around and fade in and out efficiently for CSS animations, they could potentially permit these effects to be driven by JavaScript. It doesn’t, for example, tie us to the idea of a composited layer or a layer tree, concepts that may not be meaningful in all browser implementations. The animated elements might, say, be redrawn by the GPU each frame. But this doesn’t matter. These implementation details are orthogonal to the animation proxy concept.
 
 What About The Details?
 -----------------------
