@@ -26,7 +26,7 @@ What does this proxy buy us? A number of proposals that have been drafted to add
  - [Smooth Scrolling](http://dev.w3.org/csswg/cssom-view/), Sections 4, 5, 7, 12, and 13.
  - Accelerated CSS animations. ([I/O talk](http://www.youtube.com/watch?v=hAzhayTnhEI))
 
-There have been many attempts at creating web APIs to make authoring smooth animations both possible and easy. It would be wonderful if the problem could be addressed with a small, easy-to-implement kernel. It would also let creative web developers devise new animation authoring libraries that are just as performant as their native counterparts. In addition to its simplicity, another benefit of this approach is that it ‘explains the web’ in the [Extensible Web Manifesto](extensiblewebmanifesto.org) sense. In particular, it explains accelerated animations. This brings us to...
+There have been many attempts at creating web APIs to make authoring smooth animations both possible and easy. It would be wonderful if the problem could be addressed with a small, easy-to-implement kernel. It would also let creative web developers devise new animation authoring libraries that are just as performant as their native counterparts. In addition to its simplicity, another benefit of this approach is that it ‘explains the web’ in the [Extensible Web Manifesto](http://extensiblewebmanifesto.org) sense. In particular, it explains accelerated animations. This brings us to...
 
 The Big Concern
 ---------------
