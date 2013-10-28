@@ -1,0 +1,13 @@
+<h1>Animation Proxy</h1>
+<pre clas='metadata'>
+  Status: ED
+  ED: https://docs.google.com/a/chromium.org/document/d/1Zd7WU2gw6F0BkY_f7FdXBlc0ARJFxTFH-FlpIy
+  Shortname: anim-proxy
+  Level: 1
+  Editor: Ian Vollick, Google, vollick@chromium.org
+  Abstract: An animation proxy provides asynchronous access to certain layout-and-style-recalc-free properties. It may be used on a web worker thread.
+</pre>
+<h2 id="introduction">Introduction</h2>
+JavaScript-driven animations are extremely flexible and powerful, but are subject to main thread jank (by jank, I mean unpredictable interruptions in the rate that animations are serviced on a thread due to other, unrelated work on that thread). And although JavaScript can run on a web worker, DOM access and CSS property animations are not permitted. Despite their susceptibility to main thread jank, main thread animations are widely used; they're the only way to create common effects such as parallax, position-sticky, image carousels, custom scroll animations, iphone-style contact lists, and physics-based animations. In a perfect world, the main thread would always be responsive enough to guarantee that a JavaScript animation callback would be serviced every frame. In reality, this is extremely hard to achieve, both for user agents and developers of large sites composed of disparate components. The result is a lot of janky pages.
+
+DOM access is restricted to the main thread because it is not thread safe. Although it is possible to parallelize certain operations such as layout, allowing layout-dependant properties to be modified from multiple threads would cause contention. Although this is a reality for many CSS properties, there are certain <a>layout free</a> properties that could be modified asynchronously from other threads without contention. A <dfn>layout free</dfn> CSS property, is any property that may be changed without incurring a layout or a repaint. These properties currently include transform, opacity and scroll offset. Virtually all user agents support these accelerated CSS properties (i.e., properties that may be animated on another thread) and increasingly support threaded scrolling. Clearly identifying these layout-free properties and allowing them to be animated from any thread would provide a simple and powerful way to achieve smooth animations, even in the face of unpredictable main thread work.
