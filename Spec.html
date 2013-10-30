@@ -8,6 +8,101 @@
   Abstract: An animation proxy provides asynchronous access to certain layout-and-style-recalc-free properties. It may be used on a web worker thread.
 </pre>
 <h2 id="introduction">Introduction</h2>
-JavaScript-driven animations are extremely flexible and powerful, but are subject to main thread jank (by jank, I mean unpredictable interruptions in the rate that animations are serviced on a thread due to other, unrelated work on that thread). And although JavaScript can run on a web worker, DOM access and CSS property animations are not permitted. Despite their susceptibility to main thread jank, main thread animations are widely used; they're the only way to create common effects such as parallax, position-sticky, image carousels, custom scroll animations, iphone-style contact lists, and physics-based animations. In a perfect world, the main thread would always be responsive enough to guarantee that a JavaScript animation callback would be serviced every frame. In reality, this is extremely hard to achieve, both for user agents and developers of large sites composed of disparate components. The result is a lot of janky pages.
+JavaScript-driven animations are extremely flexible and powerful, but are subject to main thread <a>jank</a> (by <dfn>jank</dfn>, we mean unpredictable interruptions in the rate that animations are serviced on a thread due to other, unrelated work on that thread). And although JavaScript can run on a web worker, DOM access and CSS property animations are not permitted. Main thread animations are still widely used despite the fact that they are susceptible to main thread jank; they're the only way to create common effects such as parallax, position-sticky, image carousels, custom scroll animations, iphone-style contact lists, and physics-based animations. In a perfect world, the main thread would always be responsive enough to guarantee that a JavaScript animation callback would be serviced every frame. In reality, this is extremely hard to achieve, both for user agents and developers of large sites composed of disparate components. The result is that many pages are unnecessarily janky.
 
-DOM access is restricted to the main thread because it is not thread safe. Although it is possible to parallelize certain operations such as layout, allowing layout-dependant properties to be modified from multiple threads would cause contention. Although this is a reality for many CSS properties, there are certain <a>layout free</a> properties that could be modified asynchronously from other threads without contention. A <dfn>layout free</dfn> CSS property, is any property that may be changed without incurring a layout or a repaint. These properties currently include transform, opacity and scroll offset. Virtually all user agents support these accelerated CSS properties (i.e., properties that may be animated on another thread) and increasingly support threaded scrolling. Clearly identifying these layout-free properties and allowing them to be animated from any thread would provide a simple and powerful way to achieve smooth animations, even in the face of unpredictable main thread work.
+The DOM is not thread safe, and although it is possible to parallelize certain operations such as layout, allowing layout-dependant properties to be modified from multiple threads leads to contention. There are, however, certain <a>layout free</a> properties that could be modified asynchronously from other threads without contention. A <dfn>layout free</dfn> CSS property, is any property that may be changed without incurring a layout or a repaint. These properties currently include transform, opacity and scroll offset. Virtually all user agents support these accelerated CSS properties (i.e., properties that may be animated on another thread) and increasingly support threaded scrolling. Clearly identifying these layout free properties and allowing them to be animated from any thread would provide a simple and powerful way to achieve smooth animations, even in the face of unpredictable main thread work.
+
+This document proposes a new primitive, AnimationProxy, which will provide a direct (though possibly asynchronous) line of communication between a web worker thread and the compositor thread for the purpose of animating layout free properties, avoiding the main thread and its potential for jank.
+
+<h2 id="dom-interfaces">DOM Interfaces</h2>
+
+<h3 id="creation-of-animation-proxies">AnimationProxy Creation</h3>
+
+AnimationProxy instances are obtained from DOM elements using the following interface.
+
+<pre class='idl'>
+interface AnimationProxyProvider {
+    AnimationProxy getAnimationProxy();
+};
+
+Element implements AnimationProxyProvider;
+</pre>
+
+NOTE: An AnimationProxy may be created for any element whose transform can be animated using a CSS transition (i.e., block level elements). If getAnimationProxy is called on an unsuitable element, it will return undefined.
+
+NOTE: As with 3d transforms, the creation of an AnimationProxy will force the element to establish a stacking context. It will also act as the containing block for any fixed position descendants.
+
+<h3 id="animation-proxy-interface">The AnimationProxy Interface</h3>
+
+The AnimationProxy is designed to permit asynchronous communication between web worker and compositor threads. As such, it deals in Future objects. To use these futures, appropriate callbacks must be passed to its then function. These callbacks are defined below.
+
+<pre class='idl'>
+interface AnimationProxy {
+    Future getTransform();
+    Future getOpacity();
+    Future getScrollOffset();
+
+    Future setTransform(DOMMatrix transform);
+    Future setOpacity(float opacity);
+    Future setScrollOffset(long xpos, long ypos);
+};
+</pre>
+
+NOTE: AnimationProxy is structured cloneable data and may be posted in messages between threads. It is permissible to use a proxy on multiple threads, but due to asynchrony, this may result in unpredictable behavior: there will be contention for the properties of the proxied element.
+
+<h3 id="worker-animation-timing-interface">The WebWorkerAnimationTiming Interface</h3>
+
+AnimationProxy instances are intended for animation, and as such are most useful in the context of a requestAnimationFrame callback. Ideally, this callback will be executed each frame, though that may not be impossible for all user agents. Since these callbacks may be asynchronous with respect to the compositor, it will be convenient to provide some timing information to these callbacks and to allow for atomic transactions. So rather than having a web worker implement WindowAnimationTiming, we define the following.
+
+<pre class='idl'>
+[NoInterfaceObject]
+interface WebWorkerAnimationTiming {
+    long requestAnimationFrame(AnimationFrameCallback callback);
+    void cancelAnimationFrame(long handle);
+};
+
+WebWorker implements WebWorkerAnimationTiming;
+</pre>
+
+Please refer to AnimationFrameContext for more information on how timing and transaction support is provided.
+
+NOTE: It is the prerogative of the the user agent which thread the AnimationFrameCallback executes on. In particular, a user agent may choose to execute the callback on the compositor thread to allow synchronous access to the compositor-owned, layout free properties. It may also choose to execute only a portion of the function on that thread to prevent unacceptable, compositor thread delays.
+
+<h3 id="callback-definitions">Callback Definitions</h3>
+
+<pre class='idl'>
+callback interface AnimationFrameCallback {
+    void animate(AnimationFrameContext context);
+};
+
+interface AnimationFrameContext {
+    float progress();
+    Future beginTransaction(AnimationFrameCallback cb);
+};
+
+enum AnimationFrameContextErrors {
+    "missedFrameDeadline"
+};
+
+enum AnimationProxyErrors {
+    "proxiedElementWasDestroyed"
+};
+</pre>
+
+<h3 id="turds">Turds</h3>
+
+<pre class='idl'>
+// Tab, how do I get the idl parser to point to previous specs rather than redefining stuff here?
+interface Future {
+};
+
+interface DOMMatrix {
+};
+
+interface WebWorker {
+};
+
+interface Element {
+};
+
+</pre>
