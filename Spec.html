@@ -34,7 +34,7 @@ NOTE: As with 3d transforms, the creation of an AnimationProxy will force the el
 
 <h3 id="animation-proxy-interface">The AnimationProxy Interface</h3>
 
-The AnimationProxy is designed to permit asynchronous communication between web worker and compositor threads. As such, it deals in Future objects. To use these futures, appropriate callbacks must be passed to its then function. These callbacks are defined below.
+The AnimationProxy is designed to permit asynchronous communication between web worker and compositor threads. Being an asynchronous API, it naturally deals in Future objects. The error attribute of the Future objects will be set to an enumerator of AnimationProxyErrors if the Future is rejected. If the Future's accept callback is invoked, the value attribute of the Future object will be void for the set functions and for the get functions will be an instance of the type of the argument for the corresponding set function.
 
 <pre class='idl'>
 interface AnimationProxy {
@@ -44,7 +44,11 @@ interface AnimationProxy {
 
     Future setTransform(DOMMatrix transform);
     Future setOpacity(float opacity);
-    Future setScrollOffset(long xpos, long ypos);
+    Future setScrollOffset(Point point);
+};
+
+enum AnimationProxyErrors {
+    "proxiedElementWasDestroyed"
 };
 </pre>
 
@@ -52,7 +56,7 @@ NOTE: AnimationProxy is structured cloneable data and may be posted in messages 
 
 <h3 id="worker-animation-timing-interface">The WebWorkerAnimationTiming Interface</h3>
 
-AnimationProxy instances are intended for animation, and as such are most useful in the context of a requestAnimationFrame callback. Ideally, this callback will be executed each frame, though that may not be impossible for all user agents. Since these callbacks may be asynchronous with respect to the compositor, it will be convenient to provide some timing information to these callbacks and to allow for atomic transactions. So rather than having a web worker implement WindowAnimationTiming, we define the following.
+AnimationProxy instances are intended for animation, and as such are most useful in the context of a requestAnimationFrame callback. Ideally, this callback will be executed each frame, though that may not be impossible for all user agents. Since these callbacks may be asynchronous with respect to the compositor, it will be convenient to provide some timing information to these callbacks and to allow for atomic transactions. So rather than having a web worker implement WindowAnimationTiming, we define the following, very similar interface.
 
 <pre class='idl'>
 [NoInterfaceObject]
@@ -62,15 +66,7 @@ interface WebWorkerAnimationTiming {
 };
 
 WebWorker implements WebWorkerAnimationTiming;
-</pre>
 
-Please refer to AnimationFrameContext for more information on how timing and transaction support is provided.
-
-NOTE: It is the prerogative of the the user agent which thread the AnimationFrameCallback executes on. In particular, a user agent may choose to execute the callback on the compositor thread to allow synchronous access to the compositor-owned, layout free properties. It may also choose to execute only a portion of the function on that thread to prevent unacceptable, compositor thread delays.
-
-<h3 id="callback-definitions">Callback Definitions</h3>
-
-<pre class='idl'>
 callback interface AnimationFrameCallback {
     void animate(AnimationFrameContext context);
 };
@@ -83,15 +79,15 @@ interface AnimationFrameContext {
 enum AnimationFrameContextErrors {
     "missedFrameDeadline"
 };
-
-enum AnimationProxyErrors {
-    "proxiedElementWasDestroyed"
-};
 </pre>
 
-<h3 id="turds">Turds</h3>
+The AnimationFrameContext's progress function returns a value in the range [0, 1] indicating where the current time sits between the frame boundaries of the last and current frame. By current frame, we are referring to the frame in which the requestAnimationFrame was invoked and by boundary we are referring to the time when content for the frame will be presented.
 
-<pre class='idl'>
+Any modification to AnimationProxy instances that occur in an AnimationFrameCallback passed to beginTransaction will be undone if the callback is unable to complete. Modifications to other, non-AnimationProxy values will not be rolled back, however. If a rollback was required the Future's reject callback will be executed and its error attribute will be set to an enumerator of AnimationFrameContextErrors.
+
+NOTE: It is the prerogative of the the user agent which thread the AnimationFrameCallback executes on. In particular, a user agent may choose to execute the callback on the compositor thread to allow synchronous access to the compositor-owned, layout free properties. It may also choose to execute only a portion of the function on that thread to prevent unacceptable, compositor thread delays.
+
+<pre class='idl' style="display:none">
 // Tab, how do I get the idl parser to point to previous specs rather than redefining stuff here?
 interface Future {
 };
@@ -104,5 +100,4 @@ interface WebWorker {
 
 interface Element {
 };
-
 </pre>
