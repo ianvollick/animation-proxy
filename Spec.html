@@ -60,7 +60,7 @@ NOTE: <a interface>AnimationProxy</a> is structured cloneable data and may be po
 
 <h3 id="worker-animation-timing-interface">The WebWorkerAnimationTiming Interface</h3>
 
-<a interface>AnimationProxy</a> instances are intended for animation, and as such are most useful in the context of a <a method>requestAnimationFrame()</a> callback. Ideally, this callback will be executed each frame, though that may not be impossible for all user agents. Since these callbacks may be asynchronous with respect to the compositor, it will be convenient to provide some timing information to these callbacks and to allow for atomic transactions. So rather than having a web worker implement <a href="http://www.w3.org/TR/animation-timing/">WindowAnimationTiming</a>, we define the following, very similar interface.
+<a interface>AnimationProxy</a> instances are intended for animation, and as such are most useful in the context of a <a method title="requestAnimationFrame()">requestAnimationFrame</a> callback. Ideally, this callback will be executed each frame, though that may not always be possible for all user agents. Since these callbacks may be asynchronous with respect to the compositor, it will be convenient to provide some timing information to these callbacks and to allow for atomic transactions. So rather than having a web worker implement <a href="http://www.w3.org/TR/animation-timing/">WindowAnimationTiming</a>, we define the following, very similar interface.
 
 <pre class='idl'>
 [NoInterfaceObject]
