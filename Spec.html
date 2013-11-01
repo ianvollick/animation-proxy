@@ -77,7 +77,8 @@ callback interface AnimationFrameCallback {
 
 interface AnimationFrameContext {
     float progress();
-    Promise beginTransaction(AnimationFrameCallback cb, [Default=false] optional boolean rollbackIfDeadlineMissed);
+    Promise beginAtomicTransaction(AnimationFrameCallback cb);
+    Promise beginAtomicTransactionWithDeadline(AnimationFrameCallback cb);
 };
 
 enum AnimationFrameContextErrors {
@@ -85,8 +86,10 @@ enum AnimationFrameContextErrors {
 };
 </pre>
 
-The <a interface>AnimationFrameContext</a>'s <a method title="progress()">progress</a> method returns the fractional number of frames since the start of the frame in which the <a method title="requestAnimationFrame()">requestAnimationFrame</a> callback was issued. For example, a value of 1.2 would indicate that we've passed one frame boundary since the callback was issued and we are 20% of the way through the next frame. A value greater than 1.0 indicates that <a method title="beginTransaction()">beginTransaction</a> will certainly miss the deadline for the current frame.
+The <a interface>AnimationFrameContext</a>'s <a method title="progress()">progress</a> method returns the fractional number of frames since the start of the frame in which the <a method title="requestAnimationFrame()">requestAnimationFrame</a> callback was issued. For example, a value of 1.2 would indicate that we've passed one frame boundary since the callback was issued and we are 20% of the way through the next frame. A value greater than 1.0 indicates that <a method title="beginAtomicTransactionWithDeadline()">beginAtomicTransactionWithDeadline</a> will certainly fail as it has already missed the deadline for the current frame.
 
-Any modification to <a interface>AnimationProxy</a> instances that occur in an <a callback>AnimationFrameCallback</a> passed to <a method title="beginTransaction()">beginTransaction</a> will be undone if the callback is unable to complete and <a argument>rollbackIfDeadlineMissed</a> is true. Modifications to other, non-<a interface>AnimationProxy</a> values will not be rolled back, however. If a rollback was required, the <a interface>Promise</a>'s reject callback will be executed and its error attribute will be set to an enumerator of <a enum>AnimationFrameContextErrors</a>.
+Any modification to <a interface>AnimationProxy</a> instances that occur in an <a callback>AnimationFrameCallback</a> passed to <a method title="beginAtomicTransaction()">beginAtomicTransaction</a> are guaranteed to take effect in the same frame, although this may be a different frame than the frame in which <a method title="requestAnimationFrame()">requestAnimationFrame</a> callback was issued. Changes made in a callback passed to <a method title="beginAtomicTransactionWithDeadline()">beginAtomicTransactionWithDeadline</a> will be undone if the callback is unable to complete in time. Modifications to other, non-<a interface>AnimationProxy</a> values will not be rolled back, however. If a rollback was required, the <a interface>Promise</a>'s reject callback will be executed and its error attribute will be set to an enumerator of <a enum>AnimationFrameContextErrors</a>. For both <a method title="beginAtomicTransaction()">beginAtomicTransaction</a> and <a method title="beginAtomicTransactionWithDeadline()">beginAtomicTransactionWithDeadline</a>, the <a interface>Promise</a>'s value in the accept callbacks will be an integer and will indicate the number of frames between the frame that the changes were applied and the frame in which the <a method title="requestAnimationFrame()">requestAnimationFrame</a> callback was issued.
+
+NOTE: It is permissible to interact with <a interface>AnimationProxy</a> instances outside the <a method title="requestAnimationFrame()">requestAnimationFrame</a> callback, but there is no guarantee about the atomicity of these operations. For example, if a developer chooses to manually tick their animations using setTimout, then it is possible that some of the <a interface>AnimationProxy</a> modifications made in that animation callback will take effect in one frame and the rest in another.
 
 NOTE: It is the prerogative of the the user agent which thread the <a callback>AnimationFrameCallback</a> executes on. In particular, a user agent may choose to execute the callback on a thread in the compositor component to allow synchronous access to the compositor-owned, <a>layout free</a> properties. It may also choose to execute only a portion of the function on that thread to prevent unacceptable delays in the compositor component.
