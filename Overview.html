@@ -1,0 +1,332 @@
+<!DOCTYPE html><html lang=en><head>
+  <meta content="text/html; charset=utf-8" http-equiv=Content-Type>
+  <title>Animation Proxy</title>
+  <link href=../default.css rel=stylesheet type=text/css>
+  <link href=../csslogo.ico rel="shortcut icon" type=image/x-icon>
+  <link href=https://www.w3.org/StyleSheets/TR/W3C-ED rel=stylesheet type=text/css>
+</head>
+<body class=h-entry>
+<div class=head>
+  <p data-fill-with=logo><a class=logo href=http://www.w3.org/>
+    <img alt=W3C height=48 src=http://www.w3.org/Icons/w3c_home width=72>
+</a></p>
+  <h1 class="p-name no-ref" id=title>Animation Proxy</h1>
+  <h2 class="no-num no-toc no-ref heading settled heading" id=subtitle><span class=content>Editor’s Draft,
+    <span class=dt-updated><span class=value-title title=20131101>1 November 2013</span></span></span></h2>
+  <div data-fill-with=spec-metadata><dl><dt>This version:<dd><a class=u-url href=https://docs.google.com/a/chromium.org/document/d/1Zd7WU2gw6F0BkY_f7FdXBlc0ARJFxTFH-FlpIy>https://docs.google.com/a/chromium.org/document/d/1Zd7WU2gw6F0BkY_f7FdXBlc0ARJFxTFH-FlpIy</a><dt>Editor’s Draft:<dd><a href=https://docs.google.com/a/chromium.org/document/d/1Zd7WU2gw6F0BkY_f7FdXBlc0ARJFxTFH-FlpIy>https://docs.google.com/a/chromium.org/document/d/1Zd7WU2gw6F0BkY_f7FdXBlc0ARJFxTFH-FlpIy</a>
+    <dt>Feedback:</dt>
+        <dd><a href="mailto:www-style@w3.org?subject=%5Banim-proxy%5D%20feedback">www-style@w3.org</a>
+            with subject line
+            “<kbd>[anim-proxy] <var>… message topic …</var></kbd>”(<a href=http://lists.w3.org/Archives/Public/www-style/ rel=discussion>archives</a>)<dt>Test Suite:<dd>None Yet<dt>Editors:
+<dd class="p-author h-card vcard"><a class="p-name fn u-email email" href=mailto:vollick@chromium.org>Ian Vollick</a> (<span class="p-org org">Google</span>)</dl></div>
+  <div data-fill-with=warning></div>
+  <p class=copyright data-fill-with=copyright><a href=http://www.w3.org/Consortium/Legal/ipr-notice#Copyright>Copyright</a> © 2013 <a href=http://www.w3.org/><abbr title="World Wide Web Consortium">W3C</abbr></a><sup>®</sup> (<a href=http://www.csail.mit.edu/><abbr title="Massachusetts Institute of Technology">MIT</abbr></a>, <a href=http://www.ercim.eu/><abbr title="European Research Consortium for Informatics and Mathematics">ERCIM</abbr></a>, <a href=http://www.keio.ac.jp/>Keio</a>, <a href=http://ev.buaa.edu.cn/>Beihang</a>), All Rights Reserved. W3C <a href=http://www.w3.org/Consortium/Legal/ipr-notice#Legal_Disclaimer>liability</a>, <a href=http://www.w3.org/Consortium/Legal/ipr-notice#W3C_Trademarks>trademark</a> and <a href=http://www.w3.org/Consortium/Legal/copyright-documents>document use</a> rules apply.</p>
+  <hr title="Separator for header">
+</div>
+
+<h2 class="no-num no-toc no-ref heading settled heading" id=abstract><span class=content>Abstract</span></h2>
+<p class=p-summary data-fill-with=abstract>An animation proxy provides asynchronous access to certain layout-and-style-recalc-free properties. It may be used on a web worker thread.
+<a href=http://www.w3.org/TR/CSS/>CSS</a> is a language for describing the rendering of structured documents 
+(such as HTML and XML) 
+on screen, on paper, in speech, etc.</p>
+
+<h2 class="no-num no-toc no-ref heading settled heading" id=status><span class=content>Status of this document</span></h2>
+<div data-fill-with=status><p>
+	This is a public copy of the editors’ draft. 
+	It is provided for discussion only and may change at any moment. 
+	Its publication here does not imply endorsement of its contents by W3C. 
+	Don’t cite this document other than as work in progress.
+
+<p>
+	The (<a href=http://lists.w3.org/Archives/Public/www-style/>archived</a>) public mailing list
+	<a href="mailto:www-style@w3.org?Subject=%5Banim-proxy%5D%20PUT%20SUBJECT%20HERE">www-style@w3.org</a> 
+	(see <a href=http://www.w3.org/Mail/Request>instructions</a>) 
+	is preferred for discussion of this specification. 
+	When sending e-mail, 
+	please put the text “anim-proxy” in the subject, 
+	preferably like this:
+	“[anim-proxy] <em>…summary of comment…</em>”
+
+<p>
+	This document was produced by the <a href=http://www.w3.org/Style/CSS/members>CSS Working Group</a> 
+	(part of the <a href=http://www.w3.org/Style/>Style Activity</a>).
+
+<p>
+	This document was produced by a group operating under 
+	the <a href=http://www.w3.org/Consortium/Patent-Policy-20040205/>5 February 2004 W3C Patent Policy</a>. 
+	W3C maintains a <a href=http://www.w3.org/2004/01/pp-impl/32061/status rel=disclosure>public list of any patent disclosures</a> 
+	made in connection with the deliverables of the group; 
+	that page also includes instructions for disclosing a patent. 
+	An individual who has actual knowledge of a patent which the individual believes contains <a href=http://www.w3.org/Consortium/Patent-Policy-20040205/#def-essential>Essential Claim(s)</a> 
+	must disclose the information in accordance with <a href=http://www.w3.org/Consortium/Patent-Policy-20040205/#sec-Disclosure>section 6 of the W3C Patent Policy</a>.</div>
+<div data-fill-with=at-risk></div>
+
+<h2 class="no-num no-toc no-ref heading settled heading" id=contents><span class=content>Table of contents</span></h2>
+<div data-fill-with=table-of-contents><ul class=toc><li><a href=#introduction><span class=secno>1</span>Introduction</a><li><a href=#dom-interfaces><span class=secno>2</span>DOM Interfaces</a><ul class=toc><li><a href=#creation-of-animation-proxies><span class=secno>2.1</span>AnimationProxy Creation</a><li><a href=#animation-proxy-interface><span class=secno>2.2</span>The AnimationProxy Interface</a><li><a href=#worker-animation-timing-interface><span class=secno>2.3</span>The WebWorkerAnimationTiming Interface</a></ul><li><a href=#conformance><span class=secno></span>
+Conformance</a><ul class=toc><li><a href=#conventions><span class=secno></span>
+Document conventions</a><li><a href=#conformance-classes><span class=secno></span>
+Conformance classes</a><li><a href=#partial><span class=secno></span>
+Partial implementations</a><li><a href=#experimental><span class=secno></span>
+Experimental implementations</a><li><a href=#testing><span class=secno></span>
+Non-experimental implementations</a></ul><li><a href=#references><span class=secno></span>
+References</a><ul class=toc><li><a href=#normative><span class=secno></span>
+Normative References</a><li><a href=#informative><span class=secno></span>
+Informative References</a></ul><li><a href=#index><span class=secno></span>
+Index</a><li><a href=#property-index><span class=secno></span>
+Property index</a></ul></div>
+
+<h2 class="heading settled heading" data-level=1 id=introduction><span class=secno>1 </span><span class=content>Introduction</span><a class=self-link href=#introduction></a></h2>
+JavaScript-driven animations are extremely flexible and powerful, but are subject to <a data-link-type=dfn href=#main-thread title="main thread">main thread</a> <a data-link-type=dfn href=#jank title=jank>jank</a> (by <dfn data-dfn-type=dfn data-noexport="" id=jank>jank<a class=self-link href=#jank></a></dfn>, we mean unpredictable interruptions in the rate that animations are serviced on a thread due to other, unrelated work on that thread, and by <dfn data-dfn-type=dfn data-noexport="" id=main-thread>main thread<a class=self-link href=#main-thread></a></dfn> we refer to the thread on which JavaScript may access the DOM). And although JavaScript can run on a web worker, DOM access and CSS property animations are not permitted. <a data-link-type=dfn href=#main-thread title="main thread">Main thread</a> animations are still widely used despite the fact that they are susceptible to jank; they are the only way to create common effects such as parallax, position-sticky, image carousels, custom scroll animations, iphone-style contact lists, and physics-based animations. In a perfect world, the <a data-link-type=dfn href=#main-thread title="main thread">main thread</a> would always be responsive enough to guarantee that a JavaScript animation callback would be serviced every frame. In reality, this is extremely hard to achieve, both for user agents and developers of large sites composed of disparate components. The result is that many pages are unnecessarily janky.
+
+<p>Access to the DOM from JavaScript is not thread safe, and although it is possible to parallelize certain operations such as layout, allowing layout-dependant properties to be modified from multiple threads leads to contention. There are, however, certain <a data-link-type=dfn href=#layout-free title="layout free">layout free</a> properties that could be modified asynchronously from other threads without contention. A <dfn data-dfn-type=dfn data-noexport="" id=layout-free>layout free<a class=self-link href=#layout-free></a></dfn> CSS property, is any property that may be changed without incurring a layout or or a style recalc. These properties currently include transform, opacity and scroll offset. Virtually all user agents support these accelerated CSS properties (i.e., properties that may be animated on another thread) and increasingly support threaded scrolling. This is possible by making use of a browser component commonly called a <dfn data-dfn-type=dfn data-noexport="" id=compositor>compositor<a class=self-link href=#compositor></a></dfn>, which may modify these values without involving the <a data-link-type=dfn href=#main-thread title="main thread">main thread</a>. Clearly identifying these <a data-link-type=dfn href=#layout-free title="layout free">layout free</a> properties and allowing them to be animated from any thread would provide a simple and powerful way to achieve smooth animations, even in the face of unpredictable <a data-link-type=dfn href=#main-thread title="main thread">main thread</a> work.
+
+<p>This document proposes a new primitive, <a class=idl-code data-link-type=interface href=#dom-animationproxy title=animationproxy>AnimationProxy</a>, which permits a <a href=http://www.w3.org/TR/workers/>WebWorker</a> to directly communicate with the compositor component without involving the <a data-link-type=dfn href=#main-thread title="main thread">main thread</a>.
+
+<h2 class="heading settled heading" data-level=2 id=dom-interfaces><span class=secno>2 </span><span class=content>DOM Interfaces</span><a class=self-link href=#dom-interfaces></a></h2>
+
+<h3 class="heading settled heading" data-level=2.1 id=creation-of-animation-proxies><span class=secno>2.1 </span><span class=content>AnimationProxy Creation</span><a class=self-link href=#creation-of-animation-proxies></a></h3>
+
+<p><a class=idl-code data-link-type=interface href=#dom-animationproxy title=animationproxy>AnimationProxy</a> instances are obtained from DOM elements using the following interface.
+
+<pre class=idl>interface <dfn class=idl-code data-dfn-type=interface data-export="" id=dom-animationproxyprovider title=AnimationProxyProvider>AnimationProxyProvider<a class=self-link href=#dom-animationproxyprovider></a></dfn> {
+    // TODO: should this return null, undefined or throw an exception if it fails?
+    <a data-link-type=idl href=#dom-animationproxy title=animationproxy>AnimationProxy</a> <dfn class=idl-code data-dfn-for=AnimationProxyProvider data-dfn-type=method data-export="" id=dom-animationproxyprovider-getanimationproxy title=getAnimationProxy()>getAnimationProxy<a class=self-link href=#dom-animationproxyprovider-getanimationproxy></a></dfn>();
+};
+
+<a data-link-type=idl title=element>Element</a> implements <a data-link-type=idl href=#dom-animationproxyprovider title=animationproxyprovider>AnimationProxyProvider</a>;
+</pre>
+<p>NOTE: An <a class=idl-code data-link-type=interface href=#dom-animationproxy title=animationproxy>AnimationProxy</a> may be created for any element whose transform can be animated using a CSS transition (i.e., block level elements). If <a class=idl-code data-link-type=method href=#dom-animationproxyprovider-getanimationproxy title=getanimationproxy()>getAnimationProxy</a> is called on an unsuitable element, it will return undefined.
+
+<p>NOTE: As with 3d transforms, the creation of an <a class=idl-code data-link-type=interface href=#dom-animationproxy title=animationproxy>AnimationProxy</a> will force the element to establish a stacking context. It will also act as the containing block for any fixed position descendants. See this section of the <a href=http://www.w3.org/TR/css3-transforms/#transform-rendering>transform specification</a> for more information on the effect on fixed position elements.
+
+<h3 class="heading settled heading" data-level=2.2 id=animation-proxy-interface><span class=secno>2.2 </span><span class=content>The AnimationProxy Interface</span><a class=self-link href=#animation-proxy-interface></a></h3>
+
+<p>The <a class=idl-code data-link-type=interface href=#dom-animationproxy title=animationproxy>AnimationProxy</a> is designed to permit asynchronous communication between web worker threads and the compositor component. Being an asynchronous API, it naturally deals in <a class=idl-code data-link-type=interface href=#dom-promise title=promise>Promise</a> objects. The <dfn class=idl-code data-dfn-type=interface data-export="" id=dom-promise>Promise<a class=self-link href=#dom-promise></a></dfn> interface is defined in <a href=https://github.com/domenic/promises-unwrapping>this spec</a>. The error attribute of the <a class=idl-code data-link-type=interface href=#dom-promise title=promise>Promise</a> objects will be set to an enumerator of <a class=idl-code data-link-type=enum href=#enumdef-animationproxyerrors title=animationproxyerrors>AnimationProxyErrors</a> if the <a class=idl-code data-link-type=interface href=#dom-promise title=promise>Promise</a> is rejected. If the <a class=idl-code data-link-type=interface href=#dom-promise title=promise>Promise</a>’s accept callback is invoked, the value attribute of the <a class=idl-code data-link-type=interface href=#dom-promise title=promise>Promise</a> object will be void for the set functions and for the get functions will be an instance of the type of the argument for the corresponding set function. For example, in the accept callback for <a class=idl-code data-link-type=method href=#dom-animationproxy-gettransform title=gettransform()>getTransform</a> the value will be a <a data-link-type=dfn href=#dommatrix title=dommatrix>DOMMatrix</a>.
+
+<pre class=idl>interface <dfn class=idl-code data-dfn-type=interface data-export="" id=dom-animationproxy title=AnimationProxy>AnimationProxy<a class=self-link href=#dom-animationproxy></a></dfn> {
+    <a data-link-type=idl href=#dom-promise title=promise>Promise</a> <dfn class=idl-code data-dfn-for=AnimationProxy data-dfn-type=method data-export="" id=dom-animationproxy-gettransform title=getTransform()>getTransform<a class=self-link href=#dom-animationproxy-gettransform></a></dfn>();
+    <a data-link-type=idl href=#dom-promise title=promise>Promise</a> <dfn class=idl-code data-dfn-for=AnimationProxy data-dfn-type=method data-export="" id=dom-animationproxy-getopacity title=getOpacity()>getOpacity<a class=self-link href=#dom-animationproxy-getopacity></a></dfn>();
+    <a data-link-type=idl href=#dom-promise title=promise>Promise</a> <dfn class=idl-code data-dfn-for=AnimationProxy data-dfn-type=method data-export="" id=dom-animationproxy-getscrolloffset title=getScrollOffset()>getScrollOffset<a class=self-link href=#dom-animationproxy-getscrolloffset></a></dfn>();
+
+    <a data-link-type=idl href=#dom-promise title=promise>Promise</a> <dfn class=idl-code data-dfn-for=AnimationProxy data-dfn-type=method data-export="" id=dom-animationproxy-settransform title=setTransform()>setTransform<a class=self-link href=#dom-animationproxy-settransform></a></dfn>(<a data-link-type=idl title=dommatrix>DOMMatrix</a> <dfn class=idl-code data-dfn-for=AnimationProxy/setTransform() data-dfn-type=argument data-export="" id=dom-animationproxysettransform-transform title=transform>transform<a class=self-link href=#dom-animationproxysettransform-transform></a></dfn>);
+    <a data-link-type=idl href=#dom-promise title=promise>Promise</a> <dfn class=idl-code data-dfn-for=AnimationProxy data-dfn-type=method data-export="" id=dom-animationproxy-setopacity title=setOpacity()>setOpacity<a class=self-link href=#dom-animationproxy-setopacity></a></dfn>(float <dfn class=idl-code data-dfn-for=AnimationProxy/setOpacity() data-dfn-type=argument data-export="" id=dom-animationproxysetopacity-opacity title=opacity>opacity<a class=self-link href=#dom-animationproxysetopacity-opacity></a></dfn>);
+    <a data-link-type=idl href=#dom-promise title=promise>Promise</a> <dfn class=idl-code data-dfn-for=AnimationProxy data-dfn-type=method data-export="" id=dom-animationproxy-setscrolloffset title=setScrollOffset()>setScrollOffset<a class=self-link href=#dom-animationproxy-setscrolloffset></a></dfn>(<a data-link-type=idl href=#dom-animationproxysetscrolloffset-point title=point>Point</a> <dfn class=idl-code data-dfn-for=AnimationProxy/setScrollOffset() data-dfn-type=argument data-export="" id=dom-animationproxysetscrolloffset-point title=point>point<a class=self-link href=#dom-animationproxysetscrolloffset-point></a></dfn>);
+};
+
+enum <dfn class=idl-code data-dfn-type=enum data-export="" id=enumdef-animationproxyerrors title=AnimationProxyErrors>AnimationProxyErrors<a class=self-link href=#enumdef-animationproxyerrors></a></dfn> {
+    "proxiedElementWasDestroyed"
+};
+</pre>
+<p>The <dfn data-dfn-type=dfn data-noexport="" id=dommatrix>DOMMatrix<a class=self-link href=#dommatrix></a></dfn> interface is defined <a href=http://www.w3.org/TR/matrix/>here</a>.
+
+<p>NOTE: <a class=idl-code data-link-type=interface href=#dom-animationproxy title=animationproxy>AnimationProxy</a> is structured cloneable data and may be posted in messages between threads. It is permissible to use a proxy on multiple threads, but due to asynchrony, this may result in undefined behavior: there will be contention for the properties of the proxied element.
+
+<h3 class="heading settled heading" data-level=2.3 id=worker-animation-timing-interface><span class=secno>2.3 </span><span class=content>The WebWorkerAnimationTiming Interface</span><a class=self-link href=#worker-animation-timing-interface></a></h3>
+
+<p><a class=idl-code data-link-type=interface href=#dom-animationproxy title=animationproxy>AnimationProxy</a> instances are intended for animation, and as such are most useful in the context of a <a class=idl-code data-link-type=method href=#dom-webworkeranimationtiming-requestanimationframe title=requestanimationframe()>requestAnimationFrame</a> callback. Ideally, this callback will be executed each frame, though that may not always be possible for all user agents. Since these callbacks may be asynchronous with respect to the compositor, it will be convenient to provide some timing information to these callbacks and to allow for atomic transactions. So rather than having a web worker implement <a href=http://www.w3.org/TR/animation-timing/>WindowAnimationTiming</a>, we define the following, very similar interface.
+
+<pre class=idl>[NoInterfaceObject]
+interface <dfn class=idl-code data-dfn-type=interface data-export="" id=dom-webworkeranimationtiming title=WebWorkerAnimationTiming>WebWorkerAnimationTiming<a class=self-link href=#dom-webworkeranimationtiming></a></dfn> {
+    long <dfn class=idl-code data-dfn-for=WebWorkerAnimationTiming data-dfn-type=method data-export="" id=dom-webworkeranimationtiming-requestanimationframe title=requestAnimationFrame()>requestAnimationFrame<a class=self-link href=#dom-webworkeranimationtiming-requestanimationframe></a></dfn>(<a data-link-type=idl href=#callbackdef-animationframecallback title=animationframecallback>AnimationFrameCallback</a> <dfn class=idl-code data-dfn-for=WebWorkerAnimationTiming/requestAnimationFrame() data-dfn-type=argument data-export="" id=dom-webworkeranimationtimingrequestanimationframe-callback title=callback>callback<a class=self-link href=#dom-webworkeranimationtimingrequestanimationframe-callback></a></dfn>);
+    void <dfn class=idl-code data-dfn-for=WebWorkerAnimationTiming data-dfn-type=method data-export="" id=dom-webworkeranimationtiming-cancelanimationframe title=cancelAnimationFrame()>cancelAnimationFrame<a class=self-link href=#dom-webworkeranimationtiming-cancelanimationframe></a></dfn>(long <dfn class=idl-code data-dfn-for=WebWorkerAnimationTiming/cancelAnimationFrame() data-dfn-type=argument data-export="" id=dom-webworkeranimationtimingcancelanimationframe-handle title=handle>handle<a class=self-link href=#dom-webworkeranimationtimingcancelanimationframe-handle></a></dfn>);
+};
+
+<a data-link-type=idl title=webworker>WebWorker</a> implements <a data-link-type=idl href=#dom-webworkeranimationtiming title=webworkeranimationtiming>WebWorkerAnimationTiming</a>;
+
+callback interface <dfn class=idl-code data-dfn-type=callback data-export="" id=callbackdef-animationframecallback title=AnimationFrameCallback>AnimationFrameCallback<a class=self-link href=#callbackdef-animationframecallback></a></dfn> {
+    void <dfn class=idl-code data-dfn-for=AnimationFrameCallback data-dfn-type=method data-export="" id=dom-animationframecallback-animate title=animate()>animate<a class=self-link href=#dom-animationframecallback-animate></a></dfn>(<a data-link-type=idl href=#dom-animationframecontext title=animationframecontext>AnimationFrameContext</a> <dfn class=idl-code data-dfn-for=AnimationFrameCallback/animate() data-dfn-type=argument data-export="" id=dom-animationframecallbackanimate-context title=context>context<a class=self-link href=#dom-animationframecallbackanimate-context></a></dfn>);
+};
+
+interface <dfn class=idl-code data-dfn-type=interface data-export="" id=dom-animationframecontext title=AnimationFrameContext>AnimationFrameContext<a class=self-link href=#dom-animationframecontext></a></dfn> {
+    float <dfn class=idl-code data-dfn-for=AnimationFrameContext data-dfn-type=method data-export="" id=dom-animationframecontext-progress title=progress()>progress<a class=self-link href=#dom-animationframecontext-progress></a></dfn>();
+    <a data-link-type=idl href=#dom-promise title=promise>Promise</a> <dfn class=idl-code data-dfn-for=AnimationFrameContext data-dfn-type=method data-export="" id=dom-animationframecontext-beginatomictransaction title=beginAtomicTransaction()>beginAtomicTransaction<a class=self-link href=#dom-animationframecontext-beginatomictransaction></a></dfn>(<a data-link-type=idl href=#callbackdef-animationframecallback title=animationframecallback>AnimationFrameCallback</a> <dfn class=idl-code data-dfn-for=AnimationFrameContext/beginAtomicTransaction() data-dfn-type=argument data-export="" id=dom-animationframecontextbeginatomictransaction-cb title=cb>cb<a class=self-link href=#dom-animationframecontextbeginatomictransaction-cb></a></dfn>);
+    <a data-link-type=idl href=#dom-promise title=promise>Promise</a> <dfn class=idl-code data-dfn-for=AnimationFrameContext data-dfn-type=method data-export="" id=dom-animationframecontext-beginatomictransactionwithdeadline title=beginAtomicTransactionWithDeadline()>beginAtomicTransactionWithDeadline<a class=self-link href=#dom-animationframecontext-beginatomictransactionwithdeadline></a></dfn>(<a data-link-type=idl href=#callbackdef-animationframecallback title=animationframecallback>AnimationFrameCallback</a> <dfn class=idl-code data-dfn-for=AnimationFrameContext/beginAtomicTransactionWithDeadline() data-dfn-type=argument data-export="" id=dom-animationframecontextbeginatomictransactionwithdeadline-cb title=cb>cb<a class=self-link href=#dom-animationframecontextbeginatomictransactionwithdeadline-cb></a></dfn>);
+};
+
+enum <dfn class=idl-code data-dfn-type=enum data-export="" id=enumdef-animationframecontexterrors title=AnimationFrameContextErrors>AnimationFrameContextErrors<a class=self-link href=#enumdef-animationframecontexterrors></a></dfn> {
+    "missedFrameDeadline"
+};
+</pre>
+<p>The <a class=idl-code data-link-type=interface href=#dom-animationframecontext title=animationframecontext>AnimationFrameContext</a>’s <a class=idl-code data-link-type=method href=#dom-animationframecontext-progress title=progress()>progress</a> method returns the fractional number of frames since the start of the frame in which the <a class=idl-code data-link-type=method href=#dom-webworkeranimationtiming-requestanimationframe title=requestanimationframe()>requestAnimationFrame</a> callback was issued. For example, a value of 1.2 would indicate that we’ve passed one frame boundary since the callback was issued and we are 20% of the way through the next frame. A value greater than 1.0 indicates that <a class=idl-code data-link-type=method href=#dom-animationframecontext-beginatomictransactionwithdeadline title=beginatomictransactionwithdeadline()>beginAtomicTransactionWithDeadline</a> will certainly fail as it has already missed the deadline for the current frame.
+
+<p>Any modification to <a class=idl-code data-link-type=interface href=#dom-animationproxy title=animationproxy>AnimationProxy</a> instances that occur in an <a class=idl-code data-link-type=callback href=#callbackdef-animationframecallback title=animationframecallback>AnimationFrameCallback</a> passed to <a class=idl-code data-link-type=method href=#dom-animationframecontext-beginatomictransaction title=beginatomictransaction()>beginAtomicTransaction</a> are guaranteed to take effect in the same frame, although this may be a different frame than the frame in which <a class=idl-code data-link-type=method href=#dom-webworkeranimationtiming-requestanimationframe title=requestanimationframe()>requestAnimationFrame</a> callback was issued. Changes made in a callback passed to <a class=idl-code data-link-type=method href=#dom-animationframecontext-beginatomictransactionwithdeadline title=beginatomictransactionwithdeadline()>beginAtomicTransactionWithDeadline</a> will be undone if the callback is unable to complete in time. Modifications to other, non-<a class=idl-code data-link-type=interface href=#dom-animationproxy title=animationproxy>AnimationProxy</a> values will not be rolled back, however. If a rollback was required, the <a class=idl-code data-link-type=interface href=#dom-promise title=promise>Promise</a>’s reject callback will be executed and its error attribute will be set to an enumerator of <a class=idl-code data-link-type=enum href=#enumdef-animationframecontexterrors title=animationframecontexterrors>AnimationFrameContextErrors</a>. For both <a class=idl-code data-link-type=method href=#dom-animationframecontext-beginatomictransaction title=beginatomictransaction()>beginAtomicTransaction</a> and <a class=idl-code data-link-type=method href=#dom-animationframecontext-beginatomictransactionwithdeadline title=beginatomictransactionwithdeadline()>beginAtomicTransactionWithDeadline</a>, the <a class=idl-code data-link-type=interface href=#dom-promise title=promise>Promise</a>’s value in the accept callbacks will be an integer and will indicate the number of frames between the frame that the changes were applied and the frame in which the <a class=idl-code data-link-type=method href=#dom-webworkeranimationtiming-requestanimationframe title=requestanimationframe()>requestAnimationFrame</a> callback was issued.
+
+<p>NOTE: It is permissible to interact with <a class=idl-code data-link-type=interface href=#dom-animationproxy title=animationproxy>AnimationProxy</a> instances outside the <a class=idl-code data-link-type=method href=#dom-webworkeranimationtiming-requestanimationframe title=requestanimationframe()>requestAnimationFrame</a> callback, but there is no guarantee about the atomicity of these operations. For example, if a developer chooses to manually tick their animations using setTimout, then it is possible that some of the <a class=idl-code data-link-type=interface href=#dom-animationproxy title=animationproxy>AnimationProxy</a> modifications made in that animation callback will take effect in one frame and the rest in another.
+
+<p>NOTE: It is the prerogative of the the user agent which thread the <a class=idl-code data-link-type=callback href=#callbackdef-animationframecallback title=animationframecallback>AnimationFrameCallback</a> executes on. In particular, a user agent may choose to execute the callback on a thread in the compositor component to allow synchronous access to the compositor-owned, <a data-link-type=dfn href=#layout-free title="layout free">layout free</a> properties. It may also choose to execute only a portion of the function on that thread to prevent unacceptable delays in the compositor component.
+
+<h2 class="no-ref no-num heading settled heading" id=conformance><span class=content>
+Conformance</span><a class=self-link href=#conformance></a></h2>
+
+<h3 class="no-ref heading settled heading" id=conventions><span class=content>
+Document conventions</span><a class=self-link href=#conventions></a></h3>
+
+    <p>Conformance requirements are expressed with a combination of
+    descriptive assertions and RFC 2119 terminology. The key words "MUST",
+    "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT",
+    "RECOMMENDED", "MAY", and "OPTIONAL" in the normative parts of this
+    document are to be interpreted as described in RFC 2119.
+    However, for readability, these words do not appear in all uppercase
+    letters in this specification.
+
+    <p>All of the text of this specification is normative except sections
+    explicitly marked as non-normative, examples, and notes. <a data-biblio-type=normative data-link-type=biblio href=#rfc2119 title=rfc2119>[RFC2119]</a></p>
+
+    <p>Examples in this specification are introduced with the words "for example"
+    or are set apart from the normative text with <code>class="example"</code>,
+    like this:
+
+    <div class=example>
+        <p>This is an example of an informative example.</p>
+    </div>
+
+    <p>Informative notes begin with the word "Note" and are set apart from the
+    normative text with <code>class="note"</code>, like this:
+
+    <p class=note>Note, this is an informative note.</p>
+
+<h3 class="no-ref heading settled heading" id=conformance-classes><span class=content>
+Conformance classes</span><a class=self-link href=#conformance-classes></a></h3>
+
+    <p>Conformance to this specification
+    is defined for three conformance classes:
+    <dl>
+        <dt>style sheet
+            <dd>A <a href=http://www.w3.org/TR/CSS21/conform.html#style-sheet>CSS
+            style sheet</a>.
+        <dt>renderer
+            <dd>A <a href=http://www.w3.org/TR/CSS21/conform.html#user-agent>UA</a>
+            that interprets the semantics of a style sheet and renders
+            documents that use them.
+        <dt>authoring tool
+            <dd>A <a href=http://www.w3.org/TR/CSS21/conform.html#user-agent>UA</a>
+            that writes a style sheet.
+    </dl>
+
+    <p>A style sheet is conformant to this specification
+    if all of its statements that use syntax defined in this module are valid
+    according to the generic CSS grammar and the individual grammars of each
+    feature defined in this module.
+
+    <p>A renderer is conformant to this specification
+    if, in addition to interpreting the style sheet as defined by the
+    appropriate specifications, it supports all the features defined
+    by this specification by parsing them correctly
+    and rendering the document accordingly. However, the inability of a
+    UA to correctly render a document due to limitations of the device
+    does not make the UA non-conformant. (For example, a UA is not
+    required to render color on a monochrome monitor.)
+
+    <p>An authoring tool is conformant to this specification
+    if it writes style sheets that are syntactically correct according to the
+    generic CSS grammar and the individual grammars of each feature in
+    this module, and meet all other conformance requirements of style sheets
+    as described in this module.
+
+<h3 class="no-ref heading settled heading" id=partial><span class=content>
+Partial implementations</span><a class=self-link href=#partial></a></h3>
+
+    <p>So that authors can exploit the forward-compatible parsing rules to
+    assign fallback values, CSS renderers <strong>must</strong>
+    treat as invalid (and <a href=http://www.w3.org/TR/CSS21/conform.html#ignore>ignore
+    as appropriate</a>) any at-rules, properties, property values, keywords,
+    and other syntactic constructs for which they have no usable level of
+    support. In particular, user agents <strong>must not</strong> selectively
+    ignore unsupported component values and honor supported values in a single
+    multi-value property declaration: if any value is considered invalid
+    (as unsupported values must be), CSS requires that the entire declaration
+    be ignored.</p>
+
+<h3 class="no-ref heading settled heading" id=experimental><span class=content>
+Experimental implementations</span><a class=self-link href=#experimental></a></h3>
+
+    <p>To avoid clashes with future CSS features, the CSS2.1 specification
+    reserves a <a href=http://www.w3.org/TR/CSS21/syndata.html#vendor-keywords>prefixed
+    syntax</a> for proprietary and experimental extensions to CSS.
+
+    <p>Prior to a specification reaching the Candidate Recommendation stage
+    in the W3C process, all implementations of a CSS feature are considered
+    experimental. The CSS Working Group recommends that implementations
+    use a vendor-prefixed syntax for such features, including those in
+    W3C Working Drafts. This avoids incompatibilities with future changes
+    in the draft.
+    </p>
+
+<h3 class="no-ref heading settled heading" id=testing><span class=content>
+Non-experimental implementations</span><a class=self-link href=#testing></a></h3>
+
+    <p>Once a specification reaches the Candidate Recommendation stage,
+    non-experimental implementations are possible, and implementors should
+    release an unprefixed implementation of any CR-level feature they
+    can demonstrate to be correctly implemented according to spec.
+
+    <p>To establish and maintain the interoperability of CSS across
+    implementations, the CSS Working Group requests that non-experimental
+    CSS renderers submit an implementation report (and, if necessary, the
+    testcases used for that implementation report) to the W3C before
+    releasing an unprefixed implementation of any CSS features. Testcases
+    submitted to W3C are subject to review and correction by the CSS
+    Working Group.
+
+    <p>Further information on submitting testcases and implementation reports
+    can be found from on the CSS Working Group’s website at
+    <a href=http://www.w3.org/Style/CSS/Test/>http://www.w3.org/Style/CSS/Test/</a>.
+    Questions should be directed to the
+    <a href=http://lists.w3.org/Archives/Public/public-css-testsuite>public-css-testsuite@w3.org</a>
+    mailing list.
+
+<h2 class="no-num no-ref heading settled heading" id=references><span class=content>
+References</span><a class=self-link href=#references></a></h2>
+
+<h3 class="no-num no-ref heading settled heading" id=normative><span class=content>
+Normative References</span><a class=self-link href=#normative></a></h3>
+<div data-fill-with=normative-references><dl><dt id=rfc2119 title=RFC2119><a class=self-link href=#rfc2119></a>[RFC2119]<dd>S. Bradner. <a href=http://www.ietf.org/rfc/rfc2119.txt>Key words for use in RFCs to Indicate Requirement Levels</a>. URL: <a href=http://www.ietf.org/rfc/rfc2119.txt>http://www.ietf.org/rfc/rfc2119.txt</a></dl></div>
+
+<h3 class="no-num no-ref heading settled heading" id=informative><span class=content>
+Informative References</span><a class=self-link href=#informative></a></h3>
+<div data-fill-with=informative-references><dl></dl></div>
+
+<h2 class="no-num no-ref heading settled heading" id=index><span class=content>
+Index</span><a class=self-link href=#index></a></h2>
+<div data-fill-with=index><ul class=indexlist>
+<li>animate(), <a href=#dom-animationframecallback-animate title="section 2.3">2.3</a>
+<li>AnimationFrameCallback, <a href=#callbackdef-animationframecallback title="section 2.3">2.3</a>
+<li>AnimationFrameContext, <a href=#dom-animationframecontext title="section 2.3">2.3</a>
+<li>AnimationFrameContextErrors, <a href=#enumdef-animationframecontexterrors title="section 2.3">2.3</a>
+<li>AnimationProxy, <a href=#dom-animationproxy title="section 2.2">2.2</a>
+<li>AnimationProxyErrors, <a href=#enumdef-animationproxyerrors title="section 2.2">2.2</a>
+<li>AnimationProxyProvider, <a href=#dom-animationproxyprovider title="section 2.1">2.1</a>
+<li>beginAtomicTransaction(), <a href=#dom-animationframecontext-beginatomictransaction title="section 2.3">2.3</a>
+<li>beginAtomicTransactionWithDeadline(), <a href=#dom-animationframecontext-beginatomictransactionwithdeadline title="section 2.3">2.3</a>
+<li>callback, <a href=#dom-webworkeranimationtimingrequestanimationframe-callback title="section 2.3">2.3</a>
+<li>cancelAnimationFrame(), <a href=#dom-webworkeranimationtiming-cancelanimationframe title="section 2.3">2.3</a>
+<li>cb<ul><li>argument for AnimationFrameContext/beginAtomicTransaction(), <a href=#dom-animationframecontextbeginatomictransaction-cb title="section 2.3">2.3</a>
+<li>argument for AnimationFrameContext/beginAtomicTransactionWithDeadline(), <a href=#dom-animationframecontextbeginatomictransactionwithdeadline-cb title="section 2.3">2.3</a>
+</ul><li>compositor, <a href=#compositor title="section 1">1</a>
+<li>context, <a href=#dom-animationframecallbackanimate-context title="section 2.3">2.3</a>
+<li>DOMMatrix, <a href=#dommatrix title="section 2.2">2.2</a>
+<li>getAnimationProxy(), <a href=#dom-animationproxyprovider-getanimationproxy title="section 2.1">2.1</a>
+<li>getOpacity(), <a href=#dom-animationproxy-getopacity title="section 2.2">2.2</a>
+<li>getScrollOffset(), <a href=#dom-animationproxy-getscrolloffset title="section 2.2">2.2</a>
+<li>getTransform(), <a href=#dom-animationproxy-gettransform title="section 2.2">2.2</a>
+<li>handle, <a href=#dom-webworkeranimationtimingcancelanimationframe-handle title="section 2.3">2.3</a>
+<li>jank, <a href=#jank title="section 1">1</a>
+<li>layout free, <a href=#layout-free title="section 1">1</a>
+<li>main thread, <a href=#main-thread title="section 1">1</a>
+<li>opacity, <a href=#dom-animationproxysetopacity-opacity title="section 2.2">2.2</a>
+<li>point, <a href=#dom-animationproxysetscrolloffset-point title="section 2.2">2.2</a>
+<li>progress(), <a href=#dom-animationframecontext-progress title="section 2.3">2.3</a>
+<li>Promise, <a href=#dom-promise title="section 2.2">2.2</a>
+<li>requestAnimationFrame(), <a href=#dom-webworkeranimationtiming-requestanimationframe title="section 2.3">2.3</a>
+<li>setOpacity(), <a href=#dom-animationproxy-setopacity title="section 2.2">2.2</a>
+<li>setScrollOffset(), <a href=#dom-animationproxy-setscrolloffset title="section 2.2">2.2</a>
+<li>setTransform(), <a href=#dom-animationproxy-settransform title="section 2.2">2.2</a>
+<li>transform, <a href=#dom-animationproxysettransform-transform title="section 2.2">2.2</a>
+<li>WebWorkerAnimationTiming, <a href=#dom-webworkeranimationtiming title="section 2.3">2.3</a>
+</ul></div>
+
+<h2 class="no-num no-ref heading settled heading" id=property-index><span class=content>
+Property index</span><a class=self-link href=#property-index></a></h2>
+<div data-fill-with=property-index><p>No properties defined.</div>
+
+
