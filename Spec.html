@@ -1,7 +1,7 @@
 <h1>Animation Proxy</h1>
 <pre clas='metadata'>
   Status: ED
-  ED: https://docs.google.com/a/chromium.org/document/d/1Zd7WU2gw6F0BkY_f7FdXBlc0ARJFxTFH-FlpIy
+  ED: http://htmlpreview.github.io/?https://github.com/ianvollick/animation-proxy/blob/master/Overview.html
   Shortname: anim-proxy
   Level: 1
   Editor: Ian Vollick, Google, vollick@chromium.org
@@ -23,16 +23,30 @@ This document proposes a new primitive, <a interface>AnimationProxy</a>, which p
 
 <pre class='idl'>
 interface AnimationProxyProvider {
-    // TODO: should this return null, undefined or throw an exception if it fails?
-    AnimationProxy getAnimationProxy();
+    [RaisesException] AnimationProxy getAnimationProxy();
 };
 
 Element implements AnimationProxyProvider;
 </pre>
 
-NOTE: An <a interface>AnimationProxy</a> may be created for any element whose transform can be animated using a CSS transition (i.e., block level elements). If <a method title="getAnimationProxy()">getAnimationProxy</a> is called on an unsuitable element, it will return undefined.
+Note: An <a interface>AnimationProxy</a> may be created for any element whose transform can be animated using a CSS transition (i.e., block level elements). If <a method title="getAnimationProxy()">getAnimationProxy</a> is called on an unsuitable element, it will throw an InvalidAccessError exception.
 
-NOTE: As with 3d transforms, the creation of an <a interface>AnimationProxy</a> will force the element to establish a stacking context. It will also act as the containing block for any fixed position descendants. See this section of the <a href="http://www.w3.org/TR/css3-transforms/#transform-rendering">transform specification</a> for more information on the effect on fixed position elements.
+Note: As with 3d transforms, the creation of an <a interface>AnimationProxy</a> will force the element to establish a stacking context. It will also act as the containing block for any fixed position descendants. See this section of the <a href="http://www.w3.org/TR/css3-transforms/#transform-rendering">transform specification</a> for more information on the effect on fixed position elements.
+
+<div class="example">
+    <p>
+        An example:
+
+    <pre>
+        var spinner = document.getElementById('spinner');
+        try {
+            var spinnerProxy = spinner.getAnimationProxy();
+            worker.postMessage({ 'effect': 'spin', 'proxy': spinnerProxy });
+        } catch (exception) {
+            console.log('Could not start spinner: ' + e.message);
+        }
+    </pre>
+</div>
 
 <h3 id="animation-proxy-interface">The AnimationProxy Interface</h3>
 
@@ -50,13 +64,21 @@ interface AnimationProxy {
 };
 
 enum AnimationProxyErrors {
-    "proxiedElementWasDestroyed"
+    "proxiedElementWasRemoved"
 };
 </pre>
 
+The get and set functions above return a <a interface>Promise</a>, but the work associated with the promise may be executed at any time, even before the promise is returned. This work is outlined here.
+<ol>
+  <li> If there are too many operations in the current transaction (see <a interface>AnimationFrameContext</a> below), then the <a interface>Promise</a> will be rejected and its error will be "tooManyOperationsForAtomicTransaction". If this happens, none of the following steps will be performed.
+  <li> The get or set operation is sent to the compositor component. This operation may be sent along with other operations bundled in the same atomic transaction (see <a interface>AnimationFrameContext</a> below).
+  <li> The compositor will perform the operation, provided it is not a part of an atomic transaction with a deadline that has passed its deadline and the proxied element hasn't been removed.
+  <li> The <a interface>Promise</a>'s accept or reject callback is invoked as appropriate, depending on the success of the preceding step.
+</ol>
+
 The <dfn>DOMMatrix</dfn> interface is defined <a href="http://www.w3.org/TR/matrix/">here</a>.
 
-NOTE: <a interface>AnimationProxy</a> is structured cloneable data and may be posted in messages between threads. It is permissible to use a proxy on multiple threads, but due to asynchrony, this may result in undefined behavior: there will be contention for the properties of the proxied element.
+Note: <a interface>AnimationProxy</a> is structured cloneable data and may be posted in messages between threads. It is permissible to use a proxy on multiple threads, but due to asynchrony, this may result in undefined behavior: there will be contention for the properties of the proxied element.
 
 <h3 id="worker-animation-timing-interface">The WebWorkerAnimationTiming Interface</h3>
 
@@ -71,18 +93,17 @@ interface WebWorkerAnimationTiming {
 
 WebWorker implements WebWorkerAnimationTiming;
 
-callback interface AnimationFrameCallback {
-    void animate(AnimationFrameContext context);
-};
-
 interface AnimationFrameContext {
     float progress();
     Promise beginAtomicTransaction(AnimationFrameCallback cb);
     Promise beginAtomicTransactionWithDeadline(AnimationFrameCallback cb);
 };
 
+callback AnimationFrameCallback = void (AnimationFrameContext context);
+
 enum AnimationFrameContextErrors {
-    "missedFrameDeadline"
+    "missedFrameDeadline",
+    "tooManyOperationsForAtomicTransaction"
 };
 </pre>
 
@@ -90,6 +111,44 @@ The <a interface>AnimationFrameContext</a>'s <a method title="progress()">progre
 
 Any modification to <a interface>AnimationProxy</a> instances that occur in an <a callback>AnimationFrameCallback</a> passed to <a method title="beginAtomicTransaction()">beginAtomicTransaction</a> are guaranteed to take effect in the same frame, although this may be a different frame than the frame in which <a method title="requestAnimationFrame()">requestAnimationFrame</a> callback was issued. Changes made in a callback passed to <a method title="beginAtomicTransactionWithDeadline()">beginAtomicTransactionWithDeadline</a> will be undone if the callback is unable to complete in time. Modifications to other, non-<a interface>AnimationProxy</a> values will not be rolled back, however. If a rollback was required, the <a interface>Promise</a>'s reject callback will be executed and its error attribute will be set to an enumerator of <a enum>AnimationFrameContextErrors</a>. For both <a method title="beginAtomicTransaction()">beginAtomicTransaction</a> and <a method title="beginAtomicTransactionWithDeadline()">beginAtomicTransactionWithDeadline</a>, the <a interface>Promise</a>'s value in the accept callbacks will be an integer and will indicate the number of frames between the frame that the changes were applied and the frame in which the <a method title="requestAnimationFrame()">requestAnimationFrame</a> callback was issued.
 
-NOTE: It is permissible to interact with <a interface>AnimationProxy</a> instances outside the <a method title="requestAnimationFrame()">requestAnimationFrame</a> callback, but there is no guarantee about the atomicity of these operations. For example, if a developer chooses to manually tick their animations using setTimout, then it is possible that some of the <a interface>AnimationProxy</a> modifications made in that animation callback will take effect in one frame and the rest in another.
+<div class="example">
+    <p>
+        An example:
 
-NOTE: It is the prerogative of the the user agent which thread the <a callback>AnimationFrameCallback</a> executes on. In particular, a user agent may choose to execute the callback on a thread in the compositor component to allow synchronous access to the compositor-owned, <a>layout free</a> properties. It may also choose to execute only a portion of the function on that thread to prevent unacceptable delays in the compositor component.
+    <pre>
+        // On the main thread.
+        overflow_scroll_proxy = overflow_scroll_element.getAnimationProxy();
+        parallax_scroll_proxy = parallax_scroll_element.getAnimationProxy();
+
+        worker.postMessage({
+            'scale': 0.9,
+            'overflow_proxy': overflow_scroll_proxy,
+            'parallax_proxy': parallax_scroll_proxy,
+        });
+
+        // On the web worker.
+        function on_message(msg) {
+            parallax_scroll_scale = msg.scale;
+            overflow_scroll_proxy = msg.overflow_proxy;
+            parallax_scroll_proxy = msg.parallax_proxy;
+            self.requestAnimationFrame(tick);
+        }
+
+        function tick(animationFrameContext) {
+            overflow_scroll_proxy.getScrollOffset().then(do_parallax(animationFrameContext), error);
+        }
+
+        function do_parallax(animationFrameContext) {
+            animationFrameContext.beginAtomicTransaction(function() {
+                var offset = value.scale(parallax_scroll_scale);
+                parallax_scroll_proxy.setScrollOffset(offset).then(scrolled, error);
+            }.then(function() { self.requestAnimationFrame(tick); }, error);
+        }
+    </pre>
+</div>
+
+Note: It is permissible to interact with <a interface>AnimationProxy</a> instances outside the <a method title="requestAnimationFrame()">requestAnimationFrame</a> callback, but there is no guarantee about the atomicity of these operations. For example, if a developer chooses to manually tick their animations using setTimout, then it is possible that some of the <a interface>AnimationProxy</a> modifications made in that animation callback will take effect in one frame and the rest in another.
+
+Note: It is the prerogative of the the user agent which thread the <a callback>AnimationFrameCallback</a> executes on. In particular, a user agent may choose to execute the callback on a thread in the compositor component to allow synchronous access to the compositor-owned, <a>layout free</a> properties. It may also choose to execute only a portion of the function on that thread to prevent unacceptable delays in the compositor component.
+
+Note: the <a interface>Promise</a> returned by <a method title="beginAtomicTransaction()">beginAtomicTransaction</a> or <a method title="beginAtomicTransactionWithDeadline()">beginAtomicTransactionWithDeadline</a> will not be resolved before the <a interface>Promise</a>'s for the operations performed in that transaction.
